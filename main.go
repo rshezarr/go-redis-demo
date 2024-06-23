@@ -38,8 +38,12 @@ func main() {
 	}
 	defer db.Close()
 
+	if err := db.Ping(); err != nil {
+		log.Fatalf("Failed to ping SQLite database: %v", err)
+	}
+
 	// Create table and insert sample data
-	createTableAndInsertData(db)
+	//createTableAndInsertData(db)
 
 	// Set up HTTP server and routes
 	r := mux.NewRouter()
@@ -67,7 +71,7 @@ func createTableAndInsertData(db *sql.DB) {
 	// Insert 100 rows of sample data
 	for i := 1; i <= 100; i++ {
 		reqId := uuid.New().String()
-		_, err := db.Exec("INSERT INTO info (id, data) VALUES (?, ?) ON CONFLICT(id) DO NOTHING;", reqId)
+		_, err := db.Exec("INSERT INTO info (data) VALUES (?) ON CONFLICT(id) DO NOTHING;", reqId)
 		if err != nil {
 			log.Fatalf("Failed to insert sample data: %v", err)
 		}
@@ -106,6 +110,7 @@ func getInfoHandler(w http.ResponseWriter, r *http.Request) {
 		response := map[string]string{"data": data}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(response)
+		return
 	} else if err != nil {
 		http.Error(w, "Failed to check Redis cache", http.StatusInternalServerError)
 		return
